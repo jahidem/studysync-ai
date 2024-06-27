@@ -3,7 +3,7 @@ from IPython.display import Image
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyC0pL6bZBQCSN0VQBfoACEqL9c5VILPn3k"
+os.environ["GOOGLE_API_KEY"] = "api-key"
 
 
 image_url = "https://picsum.photos/seed/picsum/300/300"
