@@ -1,2 +1,11 @@
+# External app artifacts
+__pycache__
+.DS_Store
+.vscode
 .env
-/venv
+venv/
+uploads/
+
+# Build artifacts
+/src/studysync/test/files
+studysync.egg-info
