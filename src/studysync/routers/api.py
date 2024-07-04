@@ -12,7 +12,7 @@ def generate(prompt: str):
 
 @api.post("/uploadFile")
 async def upload_file(in_file: UploadFile = File(...)):
-    file_id = file_handling.upload_file(in_file)
+    file_id = await file_handling.upload_file(in_file)
     return {"fileId": file_id}
 
 
