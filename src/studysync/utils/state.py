@@ -6,7 +6,7 @@ from typing import List, Dict
 from pathlib import Path
 
 # Internal Packages
-from studysync.utils.config import FileHandling, IndexContent, VectorDatabase
+from studysync.utils.config import FileHandling, IndexContent, VectorDatabase, Generator
 
 
 # Application Global State
@@ -22,3 +22,4 @@ demo: bool = False
 file_handling = FileHandling()
 vector_database = VectorDatabase()
 index_content = IndexContent()
+generator = Generator(vector_database)
