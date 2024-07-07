@@ -14,10 +14,11 @@ dependencies = [
   "pypdf==4.2.0",
   "uvicorn==0.30.1",
   "bs4==0.0.2",
-  "langchain_chroma",
   "langchainhub",
   "qdrant-client",
-  "unstructured[all-docs]"
+  "unstructured[all-docs]",
+  "aiofiles",
+  "psutil"
 ]
 
 [project.optional-dependencies]
