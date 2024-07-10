@@ -39,7 +39,6 @@ async def generate(prompt: str, imageFile: UploadFile = File(...)):
 @api.post("/uploadFile")
 async def upload_file(in_file: UploadFile = File(...)):
     file_id = await file_handling.upload_file(in_file)
-    index_content.run(f"{file_id}.{in_file.filename.split('.')[-1]}", "file")
     return {"fileId": file_id}
 
 
