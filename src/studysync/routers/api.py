@@ -67,3 +67,8 @@ async def query_file(query: str, in_file: UploadFile = File(...)):
 @api.post("/generate/qna")
 def generate(fileId: List[str]):
     return generator.qna_from_doc(fileId)
+
+
+@api.post("/generate/cqna")
+def generate(fileId: List[str]):
+    return generator.cqna_from_doc(fileId)

@@ -10,11 +10,12 @@ from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain_text_splitters import CharacterTextSplitter
 from qdrant_client import models as qdrant_models
 
-from studysync.utils.models import QuestionAnswerCollection
-from studysync.processor.conversation.prompts import qna_prompt
-from studysync.processor.conversation.parser import qna_parser
+from studysync.utils.models import QuestionAnswerCollection, CQuestionAnswerCollection
+from studysync.processor.conversation.prompts import qna_prompt, cqna_prompt
+from studysync.processor.conversation.parser import qna_parser, cqna_parser
 
 logger = logging.getLogger(__name__)
+
 
 class VectorDatabase:
     def __init__(self):
@@ -53,6 +54,20 @@ class VectorDatabase:
                 ),
             )
         return collection
+
+    def scroll_document_list(self, docIdList: List[str]):
+        search_result, _ = self.qdrant_client.scroll(
+            collection_name=self.collection_name,
+            with_vectors=False,
+            scroll_filter=qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="document_id", match=qdrant_models.MatchAny(any=docIdList)
+                    )
+                ]
+            ),
+        )
+        return search_result
 
 
 class IndexContent:
@@ -148,17 +163,7 @@ class Generator:
         return response.text
 
     def qna_from_doc(self, docIdList: List[str]) -> List[QuestionAnswerCollection]:
-        search_result, _ = self.vector_database.qdrant_client.scroll(
-            collection_name=self.vector_database.collection_name,
-            with_vectors=False,
-            scroll_filter=qdrant_models.Filter(
-                must=[
-                    qdrant_models.FieldCondition(
-                        key="document_id", match=qdrant_models.MatchAny(any=docIdList)
-                    )
-                ]
-            ),
-        )
+        search_result = self.vector_database.scroll_document_list(docIdList)
 
         MAX_SIZE_A_PROMPT = 3000
         qna_list: List[QuestionAnswerCollection] = []
@@ -176,3 +181,23 @@ class Generator:
             start += MAX_SIZE_A_PROMPT
 
         return qna_list
+
+    def cqna_from_doc(self, docIdList: List[str]) -> List[CQuestionAnswerCollection]:
+        search_result = self.vector_database.scroll_document_list(docIdList)
+
+        MAX_SIZE_A_PROMPT = 3000
+        cqna_list: List[CQuestionAnswerCollection] = []
+        start = 0
+        while start < len(search_result):
+            contents = ""
+            end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+            for index in range(start, end):
+                contents += search_result[index].payload.get("text") + "\n"
+            promt_and_model = cqna_prompt | self.gemini.model_langchain
+            output = promt_and_model.invoke({"document_content": contents})
+            cqna_collection = cqna_parser.invoke(output)
+            print(cqna_collection)
+            cqna_list.append(cqna_collection)
+            start += MAX_SIZE_A_PROMPT
+
+        return cqna_list
