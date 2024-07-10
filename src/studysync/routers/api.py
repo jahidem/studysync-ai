@@ -1,3 +1,4 @@
+import os
 from typing import List, Union
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from studysync.utils.state import (
@@ -8,11 +9,12 @@ from studysync.utils.state import (
 )
 from studysync.utils.models import QuestionAnswerCollection
 from studysync.utils.state import gemini
+from fastapi.responses import FileResponse
 
 api = APIRouter()
 
 
-@api.post("/generate/response")
+@api.get("/generate/response")
 async def generate(prompt: str) -> str:
     response = await generator.get_response(prompt)
     return response
@@ -43,7 +45,16 @@ async def upload_file(in_file: UploadFile = File(...)):
     return {"fileId": file_id}
 
 
-@api.post("/indexFile")
+@api.get("/downloadFile")
+async def upload_file(uuidFileName: str):
+    """
+    file_uuid.pdf
+    """
+    file_path = os.getcwd() + f"/uploads/{uuidFileName}"
+    return FileResponse(path=file_path, filename=uuidFileName)
+
+
+@api.get("/indexFile")
 async def upload_file(fileId: str, fileTypeName: str):
     await index_content.run(f"{fileId}.{fileTypeName}", "file")
     return {"fileId": fileId}
