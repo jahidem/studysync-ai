@@ -12,7 +12,7 @@ api = APIRouter()
 
 
 @api.post("/generate/response")
-def generate(prompt: str):
+def generate(prompt: str) -> str:
     response = generator.get_response(prompt)
     return response
 
