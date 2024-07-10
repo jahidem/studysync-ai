@@ -17,6 +17,7 @@ port: int = None
 cli_args: List[str] = None
 previous_query: str = None
 demo: bool = False
+cli_args: List[str] = None
 
 # global objs
 file_handling = FileHandling()
