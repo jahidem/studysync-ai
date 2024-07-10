@@ -1,9 +1,7 @@
 import sys
 import dotenv
-
-from studysync.utils import state
-
 dotenv.load_dotenv()
+from studysync.utils import state
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from studysync.routers.api import api
