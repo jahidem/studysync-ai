@@ -1,5 +1,8 @@
+from ntpath import join
 import os
-from typing import List, Union
+from typing import List
+import aiofiles
+import aiofiles.os
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from studysync.utils.state import (
     file_handling,
@@ -7,7 +10,6 @@ from studysync.utils.state import (
     index_content,
     generator,
 )
-from studysync.utils.models import QuestionAnswerCollection
 from studysync.utils.state import gemini
 from fastapi.responses import FileResponse
 
@@ -48,16 +50,29 @@ async def upload_file(in_file: UploadFile = File(...)):
 @api.get("/downloadFile")
 async def upload_file(uuidFileName: str):
     """
-    file_uuid.pdf
+    uuidFileName=file_uuid.pdf
     """
     file_path = os.getcwd() + f"/uploads/{uuidFileName}"
     return FileResponse(path=file_path, filename=uuidFileName)
 
 
+@api.delete("/removeFile")
+async def delete_file(uuidFileName: str):
+    """
+    uuidFileName=file_uuid.pdf
+    """
+    file_path = join(os.getcwd(), "uploads", uuidFileName)
+    os.remove(file_path)
+    return {"fileId": uuidFileName}
+
+
 @api.get("/indexFile")
-async def upload_file(fileId: str, fileTypeName: str):
-    await index_content.run(f"{fileId}.{fileTypeName}", "file")
-    return {"fileId": fileId}
+async def upload_file(uuidFileName: str):
+    """
+    uuidFileName=file_uuid.pdf
+    """
+    await index_content.run(uuidFileName, "file")
+    return {"fileId": uuidFileName}
 
 
 @api.post("/queryFile")
