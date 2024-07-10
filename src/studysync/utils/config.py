@@ -1,33 +1,31 @@
 import os
-from typing import Union, List
+from typing import List
 import uuid
 import aiofiles
+import logging
 from fastapi import File, UploadFile
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain_text_splitters import CharacterTextSplitter
-import google.generativeai as genai
-from studysync.utils.models import QuestionAnswer
 from qdrant_client import models as qdrant_models
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from studysync.utils.models import QuestionAnswerCollection
 from studysync.processor.conversation.prompts import qna_prompt
 from studysync.processor.conversation.parser import qna_parser
 
+logger = logging.getLogger(__name__)
 
 class VectorDatabase:
     def __init__(self):
-        self.embedding_model = "models/embedding-001"
         self.qdrant_client = QdrantClient(
             os.getenv("QDRANT_CLIENT_URL"), api_key=os.getenv("QDRANT_API_KEY")
         )
         self.collection_name = "studysync"
         # self.create_collection(self.collection_name)
 
-    def retrieve_content(self, query: str, collection_name, query_filter=None):
-        query_vector = self.get_query_embeddings(query)["embedding"]
+    def retrieve_content(self, embedding_response, collection_name, query_filter=None):
+        query_vector = embedding_response["embedding"]
         search_result = self.qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
@@ -35,13 +33,6 @@ class VectorDatabase:
         )
 
         return search_result
-
-    def get_query_embeddings(self, text: str):
-        return genai.embed_content(
-            model=self.embedding_model,
-            content=text,
-            task_type="retrieval_query",
-        )
 
     def get_collection(self, collection_name: str):
         collections = self.qdrant_client.get_collections()
@@ -65,9 +56,9 @@ class VectorDatabase:
 
 
 class IndexContent:
-    def __init__(self):
-        self.embedding_model = "models/embedding-001"
+    def __init__(self, gemini):
         self.vectorDatabase = VectorDatabase()
+        self.gemini = gemini
 
     def extract_text_from_file(self, file_name: str):
         loader = UnstructuredFileLoader(f"uploads/{file_name}", mode="single")
@@ -79,16 +70,16 @@ class IndexContent:
         chunks = text_splitter.split_documents(pages)
         return chunks
 
-    def embedding_from_text(self, content: str):
-        embedding = genai.embed_content(
-            model=self.embedding_model, content=content, task_type="retrieval_document"
+    async def embedding_from_text(self, content: str):
+        embedding = await self.gemini.embed_content(
+            content=content, task_type="retrieval_document"
         )
         return embedding
 
-    def run(self, file_name: str, group_uuid: str):
+    async def run(self, file_name: str, group_uuid: str):
         chunks = self.extract_text_from_file(file_name)
         embeddings = [
-            self.embedding_from_text(document.page_content) for document in chunks
+            await self.embedding_from_text(document.page_content) for document in chunks
         ]
 
         points = [
@@ -134,19 +125,18 @@ class FileHandling:
 
 
 class Generator:
-    def __init__(self, vector_database: VectorDatabase):
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
-        self.model_langchain = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    def __init__(self, vector_database: VectorDatabase, gemini):
         self.vector_database = vector_database
+        self.gemini = gemini
 
-    def get_response(self, prompt: str) -> str:
-        return self.model.generate_content(prompt).text
+    async def get_response(self, prompt: str) -> str:
+        return await self.gemini.generate_content(prompt)
 
     async def get_response_on_image(
         self, prompt: str, imageFile: UploadFile = File(...)
     ) -> str:
         image_bytes = await imageFile.read()
-        response = self.model.generate_content(
+        response = await self.gemini.generate_content(
             [
                 prompt,
                 {
@@ -157,9 +147,7 @@ class Generator:
         )
         return response.text
 
-    def qna_from_doc(
-        self, docIdList: List[str]
-    ) -> List[QuestionAnswerCollection]:
+    def qna_from_doc(self, docIdList: List[str]) -> List[QuestionAnswerCollection]:
         search_result, _ = self.vector_database.qdrant_client.scroll(
             collection_name=self.vector_database.collection_name,
             with_vectors=False,
@@ -180,7 +168,7 @@ class Generator:
             end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
             for index in range(start, end):
                 contents += search_result[index].payload.get("text") + "\n"
-            promt_and_model = qna_prompt | self.model_langchain
+            promt_and_model = qna_prompt | self.gemini.model_langchain
             output = promt_and_model.invoke({"document_content": contents})
             qna_collection = qna_parser.invoke(output)
             print(qna_collection)

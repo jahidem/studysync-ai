@@ -38,10 +38,6 @@ def run():
     # Load config from CLI
     state.cli_args = sys.argv[1:]
 
-    if state.cli_args:
-        logger.setLevel(logging.INFO)
-    else:
-        logger.setLevel(logging.DEBUG)
     logger.info("🌘 Starting StudySync")
     uvicorn.run(app, host="0.0.0.0", port=8000)
 

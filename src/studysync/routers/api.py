@@ -7,13 +7,14 @@ from studysync.utils.state import (
     generator,
 )
 from studysync.utils.models import QuestionAnswerCollection
+from studysync.utils.state import gemini
 
 api = APIRouter()
 
 
 @api.post("/generate/response")
-def generate(prompt: str) -> str:
-    response = generator.get_response(prompt)
+async def generate(prompt: str) -> str:
+    response = await generator.get_response(prompt)
     return response
 
 
@@ -42,12 +43,22 @@ async def upload_file(in_file: UploadFile = File(...)):
     return {"fileId": file_id}
 
 
+@api.post("/indexFile")
+async def upload_file(fileId: str, fileTypeName: str):
+    await index_content.run(f"{fileId}.{fileTypeName}", "file")
+    return {"fileId": fileId}
+
+
 @api.post("/queryFile")
 async def query_file(query: str, in_file: UploadFile = File(...)):
     file_id = await file_handling.upload_file(in_file)
-    index_content.run(f"{file_id}.{in_file.filename.split('.')[-1]}", "emon")
+    await index_content.run(f"{file_id}.{in_file.filename.split('.')[-1]}", "emon")
+    embedding = await gemini.embed_content(
+        content=query,
+        task_type="retrieval_query",
+    )
     retrieved_contents = vector_database.retrieve_content(
-        query,
+        embedding,
         collection_name=vector_database.collection_name,
     )
     return {"retrieved": retrieved_contents}

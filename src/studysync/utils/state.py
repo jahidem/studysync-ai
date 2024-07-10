@@ -1,6 +1,6 @@
 # Standard Packages
 from typing import List, Dict
-
+from studysync.processor.gemini import Gemini
 
 # External Packages
 from pathlib import Path
@@ -22,5 +22,6 @@ cli_args: List[str] = None
 # global objs
 file_handling = FileHandling()
 vector_database = VectorDatabase()
-index_content = IndexContent()
-generator = Generator(vector_database)
+gemini = Gemini()
+index_content = IndexContent(gemini)
+generator = Generator(vector_database, gemini)
