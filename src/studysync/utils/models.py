@@ -21,3 +21,13 @@ class CQuestionAnswer(BaseModel):
 
 class CQuestionAnswerCollection(BaseModel):
     collection: List[CQuestionAnswer]
+
+
+class TopicOfStudy(BaseModel):
+    name: str = Field(description="The concise name of the topic of study")
+    desciption: str = Field(description="Short description of the topic")
+
+
+class TopicOfStudyCollection(BaseModel):
+    collectionName: str = Field(description="Adequate title for the topics included")
+    collection: List[TopicOfStudy]

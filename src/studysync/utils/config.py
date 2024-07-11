@@ -10,9 +10,22 @@ from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain_text_splitters import CharacterTextSplitter
 from qdrant_client import models as qdrant_models
 
-from studysync.utils.models import QuestionAnswerCollection, CQuestionAnswerCollection
-from studysync.processor.conversation.prompts import qna_prompt, cqna_prompt
-from studysync.processor.conversation.parser import qna_parser, cqna_parser
+from studysync.utils.models import (
+    QuestionAnswerCollection,
+    CQuestionAnswerCollection,
+    TopicOfStudy,
+    TopicOfStudyCollection,
+)
+from studysync.processor.conversation.prompts import (
+    qna_prompt,
+    cqna_prompt,
+    topic_prompt,
+)
+from studysync.processor.conversation.parser import (
+    qna_parser,
+    cqna_parser,
+    topic_parser,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -137,8 +150,6 @@ class FileHandling:
             return None
 
         return file_id
-    
-        
 
 
 class Generator:
@@ -164,11 +175,11 @@ class Generator:
         )
         return response.text
 
-    def qna_from_doc(self, docIdList: List[str]) -> List[QuestionAnswerCollection]:
+    def qna_from_doc(self, docIdList: List[str]) -> QuestionAnswerCollection:
         search_result = self.vector_database.scroll_document_list(docIdList)
 
         MAX_SIZE_A_PROMPT = 3000
-        qna_list: List[QuestionAnswerCollection] = []
+        qna_list = QuestionAnswerCollection(collection=[])
         start = 0
         while start < len(search_result):
             contents = ""
@@ -178,17 +189,16 @@ class Generator:
             promt_and_model = qna_prompt | self.gemini.model_langchain
             output = promt_and_model.invoke({"document_content": contents})
             qna_collection = qna_parser.invoke(output)
-            print(qna_collection)
-            qna_list.append(qna_collection)
+            qna_list.collection.append(qna_collection.collection)
             start += MAX_SIZE_A_PROMPT
 
         return qna_list
 
-    def cqna_from_doc(self, docIdList: List[str]) -> List[CQuestionAnswerCollection]:
+    def cqna_from_doc(self, docIdList: List[str]) -> CQuestionAnswerCollection:
         search_result = self.vector_database.scroll_document_list(docIdList)
 
         MAX_SIZE_A_PROMPT = 3000
-        cqna_list: List[CQuestionAnswerCollection] = []
+        cqna_list = CQuestionAnswerCollection(collection=[])
         start = 0
         while start < len(search_result):
             contents = ""
@@ -198,8 +208,26 @@ class Generator:
             promt_and_model = cqna_prompt | self.gemini.model_langchain
             output = promt_and_model.invoke({"document_content": contents})
             cqna_collection = cqna_parser.invoke(output)
-            print(cqna_collection)
-            cqna_list.append(cqna_collection)
+            cqna_list.collection.append(cqna_collection.collection)
             start += MAX_SIZE_A_PROMPT
 
         return cqna_list
+
+    def topics_from_doc(self, docIdList: List[str]) -> List[TopicOfStudyCollection]:
+        search_result = self.vector_database.scroll_document_list(docIdList)
+        MAX_SIZE_A_PROMPT = 3000
+        topic_list = TopicOfStudyCollection(collection=[], collectionName="")
+        start = 0
+        while start < len(search_result):
+            contents = ""
+            end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+            for index in range(start, end):
+                contents += search_result[index].payload.get("text") + "\n"
+            promt_and_model = topic_prompt | self.gemini.model_langchain
+            output = promt_and_model.invoke({"document_content": contents})
+            topic_collection = topic_parser.invoke(output)
+            topic_list.collection.append(topic_collection.collection)
+            topic_list.collectionName = topic_collection.collectionName
+            start += MAX_SIZE_A_PROMPT
+
+        return topic_list

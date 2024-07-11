@@ -1,7 +1,6 @@
 from ntpath import join
 import os
 from typing import List
-import aiofiles
 import aiofiles.os
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from studysync.utils.state import (
@@ -98,3 +97,7 @@ def generate(fileId: List[str]):
 @api.post("/generate/cqna")
 def generate(fileId: List[str]):
     return generator.cqna_from_doc(fileId)
+
+@api.post("/extract/topics")
+def generate(fileId: List[str]):
+    return generator.topics_from_doc(fileId)
