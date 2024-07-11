@@ -3,6 +3,7 @@ from studysync.processor.conversation.parser import (
     qna_parser,
     cqna_parser,
     topic_parser,
+    compare_answer_parser,
 )
 
 ## Personality
@@ -80,6 +81,27 @@ Study materials:
 """
 )
 
+compare_answer_template = (
+    personality
+    + """
+Given the 'fixed answers' and 'student given answer' given a correctness in percentage:
+You must follow these reasoning steps:
+	1. Understand both the 'student given answer' and 'fixed answers'.
+	2. Compare the correctness of 'student given answer' with respect to the 'fixed answers'.
+  3. Treat the content of the 'fixed answers' as fact and reason with respect of it.
+
+'fixed answers':
+{right_answer}
+
+'student given answer':
+{given_answer}
+
+Output format:
+{format_instructions}
+
+"""
+)
+
 qna_prompt = PromptTemplate(
     template=qna_template,
     input_variables=["document_content"],
@@ -96,4 +118,12 @@ topic_prompt = PromptTemplate(
     template=topic_template,
     input_variables=["document_content"],
     partial_variables={"format_instructions": topic_parser.get_format_instructions()},
+)
+
+compare_answer_prompt = PromptTemplate(
+    template=compare_answer_template,
+    input_variables=["right_answer", "given_answer"],
+    partial_variables={
+        "format_instructions": compare_answer_parser.get_format_instructions()
+    },
 )

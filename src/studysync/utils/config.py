@@ -13,18 +13,20 @@ from qdrant_client import models as qdrant_models
 from studysync.utils.models import (
     QuestionAnswerCollection,
     CQuestionAnswerCollection,
-    TopicOfStudy,
     TopicOfStudyCollection,
+    AnswerCorrectness,
 )
 from studysync.processor.conversation.prompts import (
     qna_prompt,
     cqna_prompt,
     topic_prompt,
+    compare_answer_prompt,
 )
 from studysync.processor.conversation.parser import (
     qna_parser,
     cqna_parser,
     topic_parser,
+    compare_answer_parser,
 )
 
 logger = logging.getLogger(__name__)
@@ -231,3 +233,11 @@ class Generator:
             start += MAX_SIZE_A_PROMPT
 
         return topic_list
+
+    def compare_answer(self, rightAnswer: str, givenAnswer: str):
+        promt_and_model = compare_answer_prompt | self.gemini.model_langchain
+        output = promt_and_model.invoke(
+            {"right_answer": rightAnswer, "given_answer": givenAnswer}
+        )
+        answer_correctness = compare_answer_parser.invoke(output)
+        return answer_correctness

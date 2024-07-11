@@ -1,8 +1,7 @@
 from ntpath import join
 import os
 from typing import List
-import aiofiles.os
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status, Body, status
 from studysync.utils.state import (
     file_handling,
     vector_database,
@@ -97,6 +96,16 @@ def generate(fileId: List[str]):
 @api.post("/generate/cqna")
 def generate(fileId: List[str]):
     return generator.cqna_from_doc(fileId)
+
+
+@api.post("/generate/compare_answer")
+def generate(rightAnswer: str = Body(None), givenAnswer: str = Body(None)):
+    if rightAnswer and givenAnswer:
+        return generator.compare_answer(rightAnswer, givenAnswer)
+    return {
+        "message": "Both right and student answer must be given"
+    }, status.HTTP_406_NOT_ACCEPTABLE
+
 
 @api.post("/extract/topics")
 def generate(fileId: List[str]):

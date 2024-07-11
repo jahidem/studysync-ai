@@ -31,3 +31,12 @@ class TopicOfStudy(BaseModel):
 class TopicOfStudyCollection(BaseModel):
     collectionName: str = Field(description="Adequate title for the topics included")
     collection: List[TopicOfStudy]
+
+
+class AnswerCorrectness(BaseModel):
+    correctness: int = Field(
+        description="The correctness of the answer given by student in integer ranging from 0 to 100"
+    )
+    comment: str = Field(
+        description="Short suggetions and point out wrong parts."
+    )
