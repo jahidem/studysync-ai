@@ -38,5 +38,6 @@ class AnswerCorrectness(BaseModel):
         description="The correctness of the answer given by student in integer ranging from 0 to 100"
     )
     comment: str = Field(
-        description="Short suggetions and point out wrong parts."
+        description="Concisely mention the right or wrong parts in coparison to book content."
     )
+    

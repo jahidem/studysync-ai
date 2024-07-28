@@ -84,16 +84,16 @@ Study materials:
 compare_answer_template = (
     personality
     + """
-Given the 'fixed answers' and 'student given answer' given a correctness in percentage:
+Given the 'book content' and 'student answer' give a correctness in percentage:
 You must follow these reasoning steps:
-	1. Understand both the 'student given answer' and 'fixed answers'.
-	2. Compare the correctness of 'student given answer' with respect to the 'fixed answers'.
-  3. Treat the content of the 'fixed answers' as fact and reason with respect of it.
+	1. Understand both the 'student answer' and 'book content'.
+	2. Compare the correctness of 'student answer' with respect to the 'book content'.
+  3. Treat the content of the 'book content' as fact and reason with respect of it.
 
-'fixed answers':
+book content:
 {right_answer}
 
-'student given answer':
+student answer:
 {given_answer}
 
 Output format:
