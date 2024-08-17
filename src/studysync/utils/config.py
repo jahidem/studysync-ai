@@ -178,7 +178,7 @@ class Generator:
         )
         return response.text
 
-    def generate_from_doc(
+    async def generate_from_doc(
         self,
         docIdList: List[str],
         maxCount: str,
@@ -195,12 +195,13 @@ class Generator:
             search_result = self.vector_database.scroll_document(docId)
             start = 0
             while start < len(search_result):
+                model = await self.gemini.chat_gemini_langchain()
                 contents = ""
                 end = min(len(search_result), start + self.MAX_SIZE_A_PROMPT)
                 for index in range(start, end):
                     contents += search_result[index].payload.get("text") + "\n"
 
-                promt_and_model = prompt | self.gemini.model_langchain
+                promt_and_model = prompt | model
                 output = promt_and_model.invoke(
                     {"document_content": contents, "max_count": maxCount}
                 )
@@ -209,34 +210,35 @@ class Generator:
                 result.collection.append(collection.collection)
                 start += self.MAX_SIZE_A_PROMPT
 
-    def qna_from_doc(
+    async def qna_from_doc(
         self, docIdList: List[str], maxCount: str
     ) -> QuestionAnswerCollection:
         qna_list = QuestionAnswerCollection(collection=[])
-        self.generate_from_doc(docIdList, maxCount, qna_list, qna_parser, qna_prompt)
+        await self.generate_from_doc(docIdList, maxCount, qna_list, qna_parser, qna_prompt)
 
         return qna_list
 
-    def cqna_from_doc(
+    async def cqna_from_doc(
         self, docIdList: List[str], maxCount: str
     ) -> CQuestionAnswerCollection:
         cqna_list = CQuestionAnswerCollection(collection=[])
-        self.generate_from_doc(docIdList, maxCount, cqna_list, cqna_parser, cqna_prompt)
+        await self.generate_from_doc(docIdList, maxCount, cqna_list, cqna_parser, cqna_prompt)
 
         return cqna_list
 
-    def topics_from_doc(
+    async def topics_from_doc(
         self, docIdList: List[str], maxCount: str
     ) -> List[TopicOfStudyCollection]:
         topic_list = TopicOfStudyCollection(collection=[], collectionName="")
-        self.generate_from_doc(
+        await self.generate_from_doc(
             docIdList, maxCount, topic_list, topic_parser, topic_prompt
         )
 
         return topic_list
 
-    def compare_answer(self, rightAnswer: str, givenAnswer: str):
-        promt_and_model = compare_answer_prompt | self.gemini.model_langchain
+    async def compare_answer(self, rightAnswer: str, givenAnswer: str):
+        model = await self.gemini.chat_gemini_langchain()
+        promt_and_model = compare_answer_prompt | model
         output = promt_and_model.invoke(
             {"right_answer": rightAnswer, "given_answer": givenAnswer}
         )

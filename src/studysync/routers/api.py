@@ -91,25 +91,25 @@ async def query_file(query: str, in_file: UploadFile = File(...)):
 
 
 @api.post("/generate/qna")
-def generate(fileId: List[str], maxCount: str = 20):
-    mcqList = generator.qna_from_doc(fileId, maxCount)
+async def generate(fileId: List[str], maxCount: str = 20):
+    mcqList = await generator.qna_from_doc(fileId, maxCount)
     return mcqList
 
 
 @api.post("/generate/cqna")
-def generate(fileId: List[str], maxCount: str = 20):
-    return generator.cqna_from_doc(fileId, maxCount)
+async def generate(fileId: List[str], maxCount: str = 20):
+    return await generator.cqna_from_doc(fileId, maxCount)
 
 
 @api.post("/generate/compare_answer")
-def generate(rightAnswer: str = Body(None), givenAnswer: str = Body(None)):
+async def generate(rightAnswer: str = Body(None), givenAnswer: str = Body(None)):
     if rightAnswer and givenAnswer:
-        return generator.compare_answer(rightAnswer, givenAnswer)
+        return await generator.compare_answer(rightAnswer, givenAnswer)
     return {
         "message": "Both right and student answer must be given"
     }, status.HTTP_406_NOT_ACCEPTABLE
 
 
 @api.post("/extract/topics")
-def generate(fileId: List[str], maxCount: str = 10):
-    return generator.topics_from_doc(fileId, maxCount)
+async def generate(fileId: List[str], maxCount: str = 10):
+    return await generator.topics_from_doc(fileId, maxCount)
