@@ -61,15 +61,16 @@ Study materials:
 topic_template = (
     personality
     + """
-List at most {max_count} main topics from the Study materials concisely:
+A Learner wants to know the list of concepts to study from a document.
+List at most {max_count} main concepts from the Study materials:
 You must fulfill these:
-	1. Topics must be relevent to the given contents, concise and important.
-	2. Only include most include and broad topics.
+	1. concepts must be relevent to the given contents and important.
+	2. Only include the broad concepts.
 
 You must follow these reasoning steps:
-	1. What can be the topic for a student to better learn the contents.
-	2. Now what is the concise title for the topics.
-	3. What can be the short and understandable descriptions for each of the topics.
+	1. What can be the concepts for a student to better learn the contents.
+	2. Now what is the concise title.
+	3. What can be the short and understandable descriptions for each of the concepts.
 
 Output format:
 {format_instructions}

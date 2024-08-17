@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Union
 import uuid
 import aiofiles
 import logging
@@ -178,76 +178,60 @@ class Generator:
         )
         return response.text
 
-    def qna_from_doc(
-        self, docIdList: List[str], maxCount: str
-    ) -> QuestionAnswerCollection:
-        MAX_SIZE_A_PROMPT = 3000
-        qna_list = QuestionAnswerCollection(collection=[])
+    def generate_from_doc(
+        self,
+        docIdList: List[str],
+        maxCount: str,
+        result: Union[
+            CQuestionAnswerCollection
+            | QuestionAnswerCollection
+            | List[TopicOfStudyCollection]
+        ],
+        parser,
+        prompt,
+    ):
 
         for docId in docIdList:
             search_result = self.vector_database.scroll_document(docId)
             start = 0
             while start < len(search_result):
                 contents = ""
-                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+                end = min(len(search_result), start + self.MAX_SIZE_A_PROMPT)
                 for index in range(start, end):
                     contents += search_result[index].payload.get("text") + "\n"
-                promt_and_model = qna_prompt | self.gemini.model_langchain
+
+                promt_and_model = prompt | self.gemini.model_langchain
                 output = promt_and_model.invoke(
                     {"document_content": contents, "max_count": maxCount}
                 )
-                qna_collection = qna_parser.invoke(output)
-                qna_list.collection.append(qna_collection.collection)
-                start += MAX_SIZE_A_PROMPT
+                collection = parser.invoke(output)
+
+                result.collection.append(collection.collection)
+                start += self.MAX_SIZE_A_PROMPT
+
+    def qna_from_doc(
+        self, docIdList: List[str], maxCount: str
+    ) -> QuestionAnswerCollection:
+        qna_list = QuestionAnswerCollection(collection=[])
+        self.generate_from_doc(docIdList, maxCount, qna_list, qna_parser, qna_prompt)
 
         return qna_list
 
     def cqna_from_doc(
         self, docIdList: List[str], maxCount: str
     ) -> CQuestionAnswerCollection:
-        MAX_SIZE_A_PROMPT = 3000
         cqna_list = CQuestionAnswerCollection(collection=[])
-
-        for docId in docIdList:
-            search_result = self.vector_database.scroll_document(docId)
-            start = 0
-            while start < len(search_result):
-                contents = ""
-                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
-                for index in range(start, end):
-                    contents += search_result[index].payload.get("text") + "\n"
-                promt_and_model = cqna_prompt | self.gemini.model_langchain
-                output = promt_and_model.invoke(
-                    {"document_content": contents, "max_count": maxCount}
-                )
-                cqna_collection = cqna_parser.invoke(output)
-                cqna_list.collection.append(cqna_collection.collection)
-                start += MAX_SIZE_A_PROMPT
+        self.generate_from_doc(docIdList, maxCount, cqna_list, cqna_parser, cqna_prompt)
 
         return cqna_list
 
     def topics_from_doc(
         self, docIdList: List[str], maxCount: str
     ) -> List[TopicOfStudyCollection]:
-        MAX_SIZE_A_PROMPT = 3000
         topic_list = TopicOfStudyCollection(collection=[], collectionName="")
-
-        for docId in docIdList:
-            search_result = self.vector_database.scroll_document(docId)
-            start = 0
-            while start < len(search_result):
-                contents = ""
-                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
-                for index in range(start, end):
-                    contents += search_result[index].payload.get("text") + "\n"
-                promt_and_model = topic_prompt | self.gemini.model_langchain
-                output = promt_and_model.invoke(
-                    {"document_content": contents, "max_count": maxCount}
-                )
-                topic_collection = topic_parser.invoke(output)
-                topic_list.collection.append(topic_collection.collection)
-                topic_list.collectionName = topic_collection.collectionName
-                start += MAX_SIZE_A_PROMPT
+        self.generate_from_doc(
+            docIdList, maxCount, topic_list, topic_parser, topic_prompt
+        )
 
         return topic_list
 
