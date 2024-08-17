@@ -95,7 +95,7 @@ class IndexContent:
         pages = loader.load()
 
         text_splitter = CharacterTextSplitter(
-            separator="\n", chunk_size=1000, chunk_overlap=200, length_function=len
+            separator="", chunk_size=1000, chunk_overlap=200, length_function=len
         )
         chunks = text_splitter.split_documents(pages)
         return chunks
