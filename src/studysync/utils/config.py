@@ -70,14 +70,14 @@ class VectorDatabase:
             )
         return collection
 
-    def scroll_document_list(self, docIdList: List[str]):
+    def scroll_document(self, docId: str):
         search_result, _ = self.qdrant_client.scroll(
             collection_name=self.collection_name,
             with_vectors=False,
             scroll_filter=qdrant_models.Filter(
                 must=[
                     qdrant_models.FieldCondition(
-                        key="document_id", match=qdrant_models.MatchAny(any=docIdList)
+                        key="document_id", match=qdrant_models.MatchValue(value=docId)
                     )
                 ]
             ),
@@ -158,6 +158,7 @@ class Generator:
     def __init__(self, vector_database: VectorDatabase, gemini):
         self.vector_database = vector_database
         self.gemini = gemini
+        self.MAX_SIZE_A_PROMPT = 3000
 
     async def get_response(self, prompt: str) -> str:
         return await self.gemini.generate_content(prompt)
@@ -177,60 +178,76 @@ class Generator:
         )
         return response.text
 
-    def qna_from_doc(self, docIdList: List[str]) -> QuestionAnswerCollection:
-        search_result = self.vector_database.scroll_document_list(docIdList)
-
+    def qna_from_doc(
+        self, docIdList: List[str], maxCount: str
+    ) -> QuestionAnswerCollection:
         MAX_SIZE_A_PROMPT = 3000
         qna_list = QuestionAnswerCollection(collection=[])
-        start = 0
-        while start < len(search_result):
-            contents = ""
-            end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
-            for index in range(start, end):
-                contents += search_result[index].payload.get("text") + "\n"
-            promt_and_model = qna_prompt | self.gemini.model_langchain
-            output = promt_and_model.invoke({"document_content": contents})
-            qna_collection = qna_parser.invoke(output)
-            qna_list.collection.append(qna_collection.collection)
-            start += MAX_SIZE_A_PROMPT
+
+        for docId in docIdList:
+            search_result = self.vector_database.scroll_document(docId)
+            start = 0
+            while start < len(search_result):
+                contents = ""
+                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+                for index in range(start, end):
+                    contents += search_result[index].payload.get("text") + "\n"
+                promt_and_model = qna_prompt | self.gemini.model_langchain
+                output = promt_and_model.invoke(
+                    {"document_content": contents, "max_count": maxCount}
+                )
+                qna_collection = qna_parser.invoke(output)
+                qna_list.collection.append(qna_collection.collection)
+                start += MAX_SIZE_A_PROMPT
 
         return qna_list
 
-    def cqna_from_doc(self, docIdList: List[str]) -> CQuestionAnswerCollection:
-        search_result = self.vector_database.scroll_document_list(docIdList)
-
+    def cqna_from_doc(
+        self, docIdList: List[str], maxCount: str
+    ) -> CQuestionAnswerCollection:
         MAX_SIZE_A_PROMPT = 3000
         cqna_list = CQuestionAnswerCollection(collection=[])
-        start = 0
-        while start < len(search_result):
-            contents = ""
-            end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
-            for index in range(start, end):
-                contents += search_result[index].payload.get("text") + "\n"
-            promt_and_model = cqna_prompt | self.gemini.model_langchain
-            output = promt_and_model.invoke({"document_content": contents})
-            cqna_collection = cqna_parser.invoke(output)
-            cqna_list.collection.append(cqna_collection.collection)
-            start += MAX_SIZE_A_PROMPT
+
+        for docId in docIdList:
+            search_result = self.vector_database.scroll_document(docId)
+            start = 0
+            while start < len(search_result):
+                contents = ""
+                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+                for index in range(start, end):
+                    contents += search_result[index].payload.get("text") + "\n"
+                promt_and_model = cqna_prompt | self.gemini.model_langchain
+                output = promt_and_model.invoke(
+                    {"document_content": contents, "max_count": maxCount}
+                )
+                cqna_collection = cqna_parser.invoke(output)
+                cqna_list.collection.append(cqna_collection.collection)
+                start += MAX_SIZE_A_PROMPT
 
         return cqna_list
 
-    def topics_from_doc(self, docIdList: List[str]) -> List[TopicOfStudyCollection]:
-        search_result = self.vector_database.scroll_document_list(docIdList)
+    def topics_from_doc(
+        self, docIdList: List[str], maxCount: str
+    ) -> List[TopicOfStudyCollection]:
         MAX_SIZE_A_PROMPT = 3000
         topic_list = TopicOfStudyCollection(collection=[], collectionName="")
-        start = 0
-        while start < len(search_result):
-            contents = ""
-            end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
-            for index in range(start, end):
-                contents += search_result[index].payload.get("text") + "\n"
-            promt_and_model = topic_prompt | self.gemini.model_langchain
-            output = promt_and_model.invoke({"document_content": contents})
-            topic_collection = topic_parser.invoke(output)
-            topic_list.collection.append(topic_collection.collection)
-            topic_list.collectionName = topic_collection.collectionName
-            start += MAX_SIZE_A_PROMPT
+
+        for docId in docIdList:
+            search_result = self.vector_database.scroll_document(docId)
+            start = 0
+            while start < len(search_result):
+                contents = ""
+                end = min(len(search_result), start + MAX_SIZE_A_PROMPT)
+                for index in range(start, end):
+                    contents += search_result[index].payload.get("text") + "\n"
+                promt_and_model = topic_prompt | self.gemini.model_langchain
+                output = promt_and_model.invoke(
+                    {"document_content": contents, "max_count": maxCount}
+                )
+                topic_collection = topic_parser.invoke(output)
+                topic_list.collection.append(topic_collection.collection)
+                topic_list.collectionName = topic_collection.collectionName
+                start += MAX_SIZE_A_PROMPT
 
         return topic_list
 

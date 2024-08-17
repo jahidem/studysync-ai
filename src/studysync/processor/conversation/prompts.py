@@ -14,7 +14,7 @@ personality = "You are StudySync, a large language model, informative and compre
 qna_template = (
     personality
     + """
-Generate at most 10 Multiple choice Question and Answers:
+Generate at most {max_count} Multiple choice Question and Answers:
 You must fulfill these:
 	1. Question must be relevant to the given contents and important.
 	2. Answer choices for questions must be relevant to the content and at most 5.
@@ -37,7 +37,7 @@ Study materials:
 cqna_template = (
     personality
     + """
-Generate at most 10 Question and Answers:
+Generate at most {max_count} Question and Answers:
 You must fulfill these:
 	1. Question must be relevant to the given contents, concise and important.
 	2. Answer for questions must be relevant to the content and at most 10 lines.
@@ -61,7 +61,7 @@ Study materials:
 topic_template = (
     personality
     + """
-List main topics from the Study materials concisely:
+List at most {max_count} main topics from the Study materials concisely:
 You must fulfill these:
 	1. Topics must be relevent to the given contents, concise and important.
 	2. Only include most include and broad topics.
@@ -104,19 +104,19 @@ Output format:
 
 qna_prompt = PromptTemplate(
     template=qna_template,
-    input_variables=["document_content"],
+    input_variables=["document_content", "max_count"],
     partial_variables={"format_instructions": qna_parser.get_format_instructions()},
 )
 
 cqna_prompt = PromptTemplate(
     template=cqna_template,
-    input_variables=["document_content"],
+    input_variables=["document_content", "max_count"],
     partial_variables={"format_instructions": cqna_parser.get_format_instructions()},
 )
 
 topic_prompt = PromptTemplate(
     template=topic_template,
-    input_variables=["document_content"],
+    input_variables=["document_content", "max_count"],
     partial_variables={"format_instructions": topic_parser.get_format_instructions()},
 )
 
