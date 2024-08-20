@@ -110,6 +110,11 @@ async def generate(rightAnswer: str = Body(None), givenAnswer: str = Body(None))
     }, status.HTTP_406_NOT_ACCEPTABLE
 
 
+@api.post("/generate/queryIndexedFile")
+async def query_indexed_file(query: str = Body(None), fileId: str = Body(None)):
+    return await generator.query_indexed_file(query, fileId)
+
+
 @api.post("/extract/topics")
 async def generate(fileId: List[str], maxCount: str = 10):
     return await generator.topics_from_doc(fileId, maxCount)

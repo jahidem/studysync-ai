@@ -103,6 +103,20 @@ Output format:
 """
 )
 
+
+query_indexed_file = (
+    personality
+    + """
+
+instruction:
+{instruction}
+
+below are the context for the given instruction:
+{context}
+
+"""
+)
+
 qna_prompt = PromptTemplate(
     template=qna_template,
     input_variables=["document_content", "max_count"],
@@ -124,6 +138,14 @@ topic_prompt = PromptTemplate(
 compare_answer_prompt = PromptTemplate(
     template=compare_answer_template,
     input_variables=["right_answer", "given_answer"],
+    partial_variables={
+        "format_instructions": compare_answer_parser.get_format_instructions()
+    },
+)
+
+query_indexed_file_prompt = PromptTemplate(
+    template=query_indexed_file,
+    input_variables=["instruction", "context"],
     partial_variables={
         "format_instructions": compare_answer_parser.get_format_instructions()
     },

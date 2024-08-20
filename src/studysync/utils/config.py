@@ -14,19 +14,20 @@ from studysync.utils.models import (
     QuestionAnswerCollection,
     CQuestionAnswerCollection,
     TopicOfStudyCollection,
-    AnswerCorrectness,
 )
 from studysync.processor.conversation.prompts import (
     qna_prompt,
     cqna_prompt,
     topic_prompt,
     compare_answer_prompt,
+    query_indexed_file_prompt,
 )
 from studysync.processor.conversation.parser import (
     qna_parser,
     cqna_parser,
     topic_parser,
     compare_answer_parser,
+    string_output_parser
 )
 
 logger = logging.getLogger(__name__)
@@ -40,12 +41,18 @@ class VectorDatabase:
         self.collection_name = "studysync"
         # self.create_collection(self.collection_name)
 
-    def retrieve_content(self, embedding_response, collection_name, query_filter=None):
+    def retrieve_content(self, embedding_response, collection_name, docId: str = None):
         query_vector = embedding_response["embedding"]
         search_result = self.qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
-            query_filter=query_filter,
+            query_filter=qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="document_id", match=qdrant_models.MatchValue(value=docId)
+                    )
+                ]
+            ),
         )
 
         return search_result
@@ -214,7 +221,9 @@ class Generator:
         self, docIdList: List[str], maxCount: str
     ) -> QuestionAnswerCollection:
         qna_list = QuestionAnswerCollection(collection=[])
-        await self.generate_from_doc(docIdList, maxCount, qna_list, qna_parser, qna_prompt)
+        await self.generate_from_doc(
+            docIdList, maxCount, qna_list, qna_parser, qna_prompt
+        )
 
         return qna_list
 
@@ -222,7 +231,9 @@ class Generator:
         self, docIdList: List[str], maxCount: str
     ) -> CQuestionAnswerCollection:
         cqna_list = CQuestionAnswerCollection(collection=[])
-        await self.generate_from_doc(docIdList, maxCount, cqna_list, cqna_parser, cqna_prompt)
+        await self.generate_from_doc(
+            docIdList, maxCount, cqna_list, cqna_parser, cqna_prompt
+        )
 
         return cqna_list
 
@@ -244,3 +255,20 @@ class Generator:
         )
         answer_correctness = compare_answer_parser.invoke(output)
         return answer_correctness
+
+    async def query_indexed_file(self, query: str, fileId: str):
+        embedding = await self.gemini.embed_content(
+            content=query,
+            task_type="retrieval_query",
+        )
+        retrieved_contents = self.vector_database.retrieve_content(
+            embedding,
+            collection_name=self.vector_database.collection_name,
+            docId=fileId,
+        )
+        model = await self.gemini.chat_gemini_langchain()
+        chain = query_indexed_file_prompt | model | string_output_parser
+        response = chain.invoke(
+            {"instruction": query, "context": retrieved_contents}
+        )
+        return response
