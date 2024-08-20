@@ -107,7 +107,7 @@ Output format:
 query_indexed_file = (
     personality
     + """
-
+    
 instruction:
 {instruction}
 
