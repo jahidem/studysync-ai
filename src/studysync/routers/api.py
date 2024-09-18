@@ -121,5 +121,5 @@ async def generate(fileId: List[str], maxCount: str = 10):
 
 
 @api.post("/generate/content")
-async def generate_content(topicList: List[str]):
-    return await generator.content_from_topics(topicList)
+async def generate_content(topicList: List[str], fileId: List[str]):
+    return await generator.content_from_topics(topicList, fileId)

@@ -122,7 +122,7 @@ content_from_topic_template = (
     + """
     
 instruction:
-Given study topics generate some study contents. Follow these steps:
+Given study topics generate some study contents utilizing referrence contexts. Follow these steps:
   1. Make sure all the provided topics are considered.
   2. for each provided topic make a formal and comprehensive contents so that the topic can be fully understood.
   3. provide the response in proper markdown formatings.
@@ -130,6 +130,10 @@ Given study topics generate some study contents. Follow these steps:
 below are the list of provided topics:
 {topics}
 
+below are the reffrence contexts to be considered:
+'''
+{refference}
+'''
 """
 )
 
@@ -169,5 +173,5 @@ query_indexed_file_prompt = PromptTemplate(
 
 content_from_topic_prompt = PromptTemplate(
   template=content_from_topic_template,
-    input_variables=["topics"],
+    input_variables=["topics", "refference"],
 )

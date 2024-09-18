@@ -274,8 +274,24 @@ class Generator:
         )
         return response
     
-    async def content_from_topics(self, topicList: List[str]):
+    async def content_from_topics(self, topicList: List[str], fileId: List[str]):
       model = await self.gemini.chat_gemini_langchain()
+      
+      refferenceContent = ""
+      for file in fileId:
+          for topic in topicList:
+            contents = ""
+            embedding = await self.gemini.embed_content(
+            content=topic,
+            task_type="retrieval_query")
+            retrieved_contents = self.vector_database.retrieve_content(
+                embedding,
+                collection_name=self.vector_database.collection_name,
+                docId=file)
+            for retrieve in retrieved_contents:
+                contents += retrieve.payload.get("text") + "\n"
+            refferenceContent += "\n"+ contents
+      print(refferenceContent)
       chain = content_from_topic_prompt | model
-      return chain.invoke({"topics": topicList})
+      return chain.invoke({"topics": topicList, "refference": refferenceContent})
       
