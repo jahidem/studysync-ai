@@ -117,6 +117,22 @@ below are the context for the given instruction:
 """
 )
 
+content_from_topic_template = (
+    personality
+    + """
+    
+instruction:
+Given study topics generate some study contents. Follow these steps:
+  1. Make sure all the provided topics are considered.
+  2. for each provided topic make a formal and comprehensive contents so that the topic can be fully understood.
+  3. provide the response in proper markdown formatings.
+
+below are the list of provided topics:
+{topics}
+
+"""
+)
+
 qna_prompt = PromptTemplate(
     template=qna_template,
     input_variables=["document_content", "max_count"],
@@ -149,4 +165,9 @@ query_indexed_file_prompt = PromptTemplate(
     partial_variables={
         "format_instructions": compare_answer_parser.get_format_instructions()
     },
+)
+
+content_from_topic_prompt = PromptTemplate(
+  template=content_from_topic_template,
+    input_variables=["topics"],
 )

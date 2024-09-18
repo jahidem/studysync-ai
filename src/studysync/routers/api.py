@@ -118,3 +118,8 @@ async def query_indexed_file(query: str = Body(None), fileId: str = Body(None)):
 @api.post("/extract/topics")
 async def generate(fileId: List[str], maxCount: str = 10):
     return await generator.topics_from_doc(fileId, maxCount)
+
+
+@api.post("/generate/content")
+async def generate_content(topicList: List[str]):
+    return await generator.content_from_topics(topicList)

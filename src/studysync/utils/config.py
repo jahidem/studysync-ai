@@ -21,6 +21,7 @@ from studysync.processor.conversation.prompts import (
     topic_prompt,
     compare_answer_prompt,
     query_indexed_file_prompt,
+    content_from_topic_prompt
 )
 from studysync.processor.conversation.parser import (
     qna_parser,
@@ -272,3 +273,9 @@ class Generator:
             {"instruction": query, "context": retrieved_contents}
         )
         return response
+    
+    async def content_from_topics(self, topicList: List[str]):
+      model = await self.gemini.chat_gemini_langchain()
+      chain = content_from_topic_prompt | model
+      return chain.invoke({"topics": topicList})
+      
