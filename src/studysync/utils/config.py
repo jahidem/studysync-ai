@@ -42,7 +42,7 @@ class VectorDatabase:
         self.collection_name = "studysync"
         # self.create_collection(self.collection_name)
 
-    def retrieve_content(self, embedding_response, collection_name, docId: str = None):
+    def retrieve_content_file(self, embedding_response, collection_name, docId: str = None):
         query_vector = embedding_response["embedding"]
         search_result = self.qdrant_client.search(
             collection_name=collection_name,
@@ -54,6 +54,15 @@ class VectorDatabase:
                     )
                 ]
             ),
+        )
+
+        return search_result
+    
+    def retrieve_content(self, embedding_response, collection_name):
+        query_vector = embedding_response["embedding"]
+        search_result = self.qdrant_client.search(
+            collection_name=collection_name,
+            query_vector=query_vector,
         )
 
         return search_result
@@ -170,7 +179,7 @@ class Generator:
 
     async def get_response(self, prompt: str) -> str:
         return await self.gemini.generate_content(prompt)
-
+            
     async def get_response_on_image(
         self, prompt: str, imageFile: UploadFile = File(...)
     ) -> str:
@@ -256,8 +265,8 @@ class Generator:
         )
         answer_correctness = compare_answer_parser.invoke(output)
         return answer_correctness
-
-    async def query_indexed_file(self, query: str, fileId: str):
+    
+    async def response_with_context(self, query: str):
         embedding = await self.gemini.embed_content(
             content=query,
             task_type="retrieval_query",
@@ -265,12 +274,36 @@ class Generator:
         retrieved_contents = self.vector_database.retrieve_content(
             embedding,
             collection_name=self.vector_database.collection_name,
-            docId=fileId,
         )
+        contents = ""
+        for i in range(min(len(retrieved_contents) , 3000)):
+                contents += retrieved_contents[i].payload.get("text") + "\n"
+
         model = await self.gemini.chat_gemini_langchain()
         chain = query_indexed_file_prompt | model | string_output_parser
         response = chain.invoke(
-            {"instruction": query, "context": retrieved_contents}
+            {"instruction": query, "context": contents}
+        )
+        return response
+    
+    async def query_indexed_file(self, query: str, fileId: str):
+        embedding = await self.gemini.embed_content(
+            content=query,
+            task_type="retrieval_query",
+        )
+        retrieved_contents = self.vector_database.retrieve_content_file(
+            embedding,
+            collection_name=self.vector_database.collection_name,
+            docId=fileId,
+        )
+        contents = ""
+        for i in range(min(len(retrieved_contents) , 3000)):
+                contents += retrieved_contents[i].payload.get("text") + "\n"
+
+        model = await self.gemini.chat_gemini_langchain()
+        chain = query_indexed_file_prompt | model | string_output_parser
+        response = chain.invoke(
+            {"instruction": query, "context": contents}
         )
         return response
     

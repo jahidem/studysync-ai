@@ -18,7 +18,7 @@ api = APIRouter()
 
 @api.get("/generate/response")
 async def generate(prompt: str) -> str:
-    response = await generator.get_response(prompt)
+    response = await generator.response_with_context(prompt)
     return response
 
 
