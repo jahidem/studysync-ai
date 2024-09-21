@@ -107,8 +107,8 @@ Output format:
 query_indexed_file = (
     personality
     + """
-    Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. If the context is related include it in the answer.
-
+    1. Use the following pieces of retrieved context to answer the question.
+    2. If the context is related include it in the answer otherwise don't mention anything about the context and answer from your knowledge.
 Question: {instruction} 
 
 Context: {context} 
