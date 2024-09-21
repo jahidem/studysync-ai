@@ -8,7 +8,7 @@ from studysync.processor.conversation.parser import (
 
 ## Personality
 ## --
-personality = "You are StudySync, a large language model, informative and comprehensive in your responses. You are helping a student study with some documents"
+personality = "You are StudySync, a large language model, be comprehensive in your responses."
 
 
 qna_template = (
@@ -107,13 +107,13 @@ Output format:
 query_indexed_file = (
     personality
     + """
-    
-instruction:
-{instruction}
+    Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. If the context is related include it in the answer.
 
-below are the context for the given instruction:
-{context}
+Question: {instruction} 
 
+Context: {context} 
+
+Answer:
 """
 )
 

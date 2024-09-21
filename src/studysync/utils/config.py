@@ -54,6 +54,8 @@ class VectorDatabase:
                     )
                 ]
             ),
+            limit=3000,
+            score_threshold=0.56
         )
 
         return search_result
@@ -63,6 +65,8 @@ class VectorDatabase:
         search_result = self.qdrant_client.search(
             collection_name=collection_name,
             query_vector=query_vector,
+            limit=3000,
+            score_threshold=0.56
         )
 
         return search_result
@@ -98,7 +102,7 @@ class VectorDatabase:
                     )
                 ]
             ),
-        )
+          )
         return search_result
 
 
@@ -276,7 +280,7 @@ class Generator:
             collection_name=self.vector_database.collection_name,
         )
         contents = ""
-        for i in range(min(len(retrieved_contents) , 3000)):
+        for i in range(len(retrieved_contents)):
                 contents += retrieved_contents[i].payload.get("text") + "\n"
 
         model = await self.gemini.chat_gemini_langchain()
@@ -297,7 +301,7 @@ class Generator:
             docId=fileId,
         )
         contents = ""
-        for i in range(min(len(retrieved_contents) , 3000)):
+        for i in range(len(retrieved_contents)):
                 contents += retrieved_contents[i].payload.get("text") + "\n"
 
         model = await self.gemini.chat_gemini_langchain()
