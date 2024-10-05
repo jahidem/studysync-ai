@@ -1,7 +1,7 @@
 ## installation & run (python 3.11.7)
 ```shell
 python -m venv venv 
-./venv/Script/activate
+./venv/Scripts/activate
 pip install -e .
 studysync.exe
 ```
