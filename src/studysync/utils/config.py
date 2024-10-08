@@ -112,7 +112,7 @@ class IndexContent:
         self.gemini = gemini
 
     def extract_text_from_file(self, file_name: str):
-        loader = UnstructuredFileLoader(f"uploads/{file_name}", mode="single")
+        loader = UnstructuredFileLoader(os.path.join("uploads", file_name), mode="single")
         pages = loader.load()
 
         text_splitter = CharacterTextSplitter(
@@ -161,7 +161,7 @@ class FileHandling:
         import uuid
 
         file_id = uuid.uuid4()
-        out_file_path = f"uploads/{file_id}.{in_file.filename.split('.')[-1]}"
+        out_file_path = os.path.join("uploads", f"{file_id}.{in_file.filename.split('.')[-1]}")
 
         # Asynchronous file processing with error handling
         try:
@@ -321,7 +321,7 @@ class Generator:
             embedding = await self.gemini.embed_content(
             content=topic,
             task_type="retrieval_query")
-            retrieved_contents = self.vector_database.retrieve_content(
+            retrieved_contents = self.vector_database.retrieve_content_file(
                 embedding,
                 collection_name=self.vector_database.collection_name,
                 docId=file)

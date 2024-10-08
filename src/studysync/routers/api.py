@@ -52,7 +52,7 @@ async def upload_file(uuidFileName: str):
     """
     uuidFileName=file_uuid.pdf
     """
-    file_path = os.getcwd() + f"/uploads/{uuidFileName}"
+    file_path = os.path.join(os.getcwd(), 'uploads',uuidFileName)
     return FileResponse(path=file_path, filename=uuidFileName)
 
 
